@@ -37,6 +37,10 @@ the trailing <tt>}</tt> with a <tt>#</tt> comment.
 
   s.summary = "A Ruby API for TF2. }; puts "Geeeeentlemen" #"
 
+== Proof Of Concept (PoC)
+
+  gem install rubygems-pwn
+
 == Impact
 
 As far as I can tell, the +ruby_code+ method was introduced around RubyGems
@@ -62,7 +66,8 @@ since RubyGems will load all gemspecs during start-up. The injected code
 will also survive <tt>gem pristine</tt>, which re-generates all installed
 gemspecs.
 
-== Proof Of Concept (PoC)
+== Solution
 
-  gem install rubygems-pwn
-
+The fix for this bug is rather simple, the +ruby_code+ method should
+call <tt>String#dump</tt> or <tt>String#inspect</tt> instead of naively
+wrapping the Strings in <tt>%q{ }</tt>.
