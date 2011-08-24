@@ -1,0 +1,68 @@
+= RubyGems PWN
+
+<b>All versions of RubyGems are vulnerable to Persistent Code Injection via
+the gemspecs, which RubyGems generates when installing a Gem.</b>
+
+== Explanation
+
+When building a +.gem+ file, RubyGems will load your pure-Ruby gemspec
+and +YAML.dump+ the gemspec object. The YAML-dump gemspec is then
+compressed and included into the +.gem+ file. Upon installing a Gem,
+RubyGems will extract the YAML-dumped gemspec, +YAML.load+ the gemspec
+and then build a new pure-Ruby representation of the attributes within
+<tt>Gem::Specification</tt>. RubyGems installs this re-generated pure-Ruby
+gemspec into the +specifications/+ directory within the +GEM_HOME+.
+
+The rational for dumping the gemspec to YAML, then building another Ruby
+gemspec file from the dumped YAML, is that <tt>eval()</tt>ing Ruby is
+faster than calling +YAML.load+. Since RubyGems loads <i>every</i> gemspec
+at start-up, being fast matters.
+
+RubyGems builds this pure-Ruby gemspec using the to_ruby[https://github.com/rubygems/rubygems/blob/2ff3142c9a477ac2dbf0a5a2ff0f837b7fcc97e9/lib/rubygems/specification.rb#L2049-2124] method. +to_ruby+ merely
+concatenates Ruby code into a big String, and embeds the data from the
+<tt>Gem::Specification</tt>. +to_ruby+ relies on the
+ruby_code[https://github.com/rubygems/rubygems/blob/2ff3142c9a477ac2dbf0a5a2ff0f837b7fcc97e9/lib/rubygems/specification.rb#L1915-1931] method,
+for wrap the gemspec data, so that they can be safely embedded into
+Ruby code.
+
+Unfortunately, the +ruby_code+ method naively wraps Strings in
+<tt>%q{</tt> and <tt>}</tt>, and performs no character-escaping.
+Security connoisseurs will immediately recognize this mistake
+as the same one which makes SQL Injection possible.
+
+To exploit this bug, one simply needs to place a <tt>};</tt> in a
+<tt>Gem::Specification</tt> field (+summary+ is a good hiding spot)
+to escape the <tt>%q{</tt>, then add the malicious Ruby code, and ignore
+the trailing <tt>}</tt> with a <tt>#</tt> comment.
+
+  s.summary = "A Ruby API for TF2. }; puts "Geeeeentlemen" #"
+
+== Impact
+
+As far as I can tell, the +ruby_code+ method was introduced around RubyGems
+0.8.0. All previous versions of RubyGems also appear to be vulnerable, since
+they directly inline the <tt>Gem::Specification</tt> attributes in
++to_ruby+:
+
+  def to_ruby
+    mark_version
+    result =  "Gem::Specification.new do |s|\n"
+    result << "s.name = %q{#{name}}\n"
+    result << "s.version = %q{#{version}}\n"
+    result << "s.platform = %q{#{platform}}\n" if @platform
+    result << "s.has_rdoc = #{has_rdoc?}\n" if has_rdoc?
+    result << "s.summary = %q{#{summary}}\n"
+
+* <tt>Gem::Specification#to_ruby</tt> method from RubyGems
+  0.2.0[http://rubyforge.org/frs/download.php/414/rubygems-0.2.0.tar.gz].
+
+Of course, there is some user-interaction required, a user must be enticed
+into installing a new Gem. Once installed, the injected code is persistent
+since RubyGems will load all gemspecs during start-up. The injected code
+will also survive <tt>gem pristine</tt>, which re-generates all installed
+gemspecs.
+
+== Proof Of Concept (PoC)
+
+  gem install rubygems-pwn
+
