@@ -71,3 +71,6 @@ gemspecs.
 The fix for this bug is rather simple, the +ruby_code+ method should
 call <tt>String#dump</tt> or <tt>String#inspect</tt> instead of naively
 wrapping the Strings in <tt>%q{ }</tt>.
+
+A more longeterm solution, would be for RubyGems to not store static-data
+as Ruby Code, but instead use a data format (YAML, XML, CSV, flat-file).
