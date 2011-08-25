@@ -26,7 +26,7 @@ for wrap the gemspec data, so that they can be safely embedded into
 Ruby code.
 
 Unfortunately, the +ruby_code+ method naively wraps Strings in
-<tt>%q{</tt> and <tt>}</tt>, and performs no character-escaping.
+<tt>%q{</tt> <tt>}</tt>, and performs no character-escaping.
 Security connoisseurs will immediately recognize this mistake
 as the same one which makes SQL Injection possible.
 
