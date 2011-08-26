@@ -4,7 +4,7 @@ require 'base64'
 
 Gem::Specification.new do |s|
   s.name        = "rubygems-pwn"
-  s.version     = "0.1.0"
+  s.version     = "0.1.1"
   s.authors     = ["Postmodern"]
   s.email       = ["postmodern.mod3@gmail.com"]
   s.homepage    = "http://github.com/sophsec/rubygems-pwn"
