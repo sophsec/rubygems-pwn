@@ -3,6 +3,8 @@
 <b>All versions of RubyGems are vulnerable to Persistent Code Injection via
 the gemspecs, which RubyGems generates when installing a Gem.</b>
 
+https://github.com/rubygems/rubygems/pull/165
+
 == Explanation
 
 When building a +.gem+ file, RubyGems will load your pure-Ruby gemspec
@@ -67,6 +69,8 @@ will also survive <tt>gem pristine</tt>, which re-generates all installed
 gemspecs.
 
 == Solution
+
+https://github.com/rubygems/rubygems/pull/165
 
 The fix for this bug is rather simple, the +ruby_code+ method should
 call <tt>String#dump</tt> or <tt>String#inspect</tt> instead of naively
